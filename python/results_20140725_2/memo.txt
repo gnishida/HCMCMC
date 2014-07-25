@@ -1,0 +1,22 @@
+﻿2つの異なるcharacteristicsを使う。
+truth0.bmp
+truth1.bmp
+
+望みのweightは[0, 1]。つまり、truth1.bmpに近い形になるはず。
+
+>python hcmcmc.py 2 10 10
+trial: 100
+K-S test: 3993.69200539
+Elapased: 0:13:24.692000
+
+trial: 200
+K-S test: 4962.74692699
+Elapsed: 0:27:04.795000
+
+trial: 300
+K-S test: 5415.53920141
+Elapsed: 0:40:38.786000
+
+trial: 400
+K-S test: 5858.09624257
+Elapsed: 0:53:51.732000
