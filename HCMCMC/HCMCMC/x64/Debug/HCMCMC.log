@@ -1,38 +1,17 @@
-﻿Build started 7/25/2014 5:40:00 PM.
-     1>Project "D:\GitHub\HCMCMC\HCMCMC\HCMCMC\HCMCMC.vcxproj" on node 2 (build target(s)).
+﻿Build started 7/26/2014 11:17:58 AM.
+     1>Project "C:\Users\gen\Documents\GitHub\HCMCMC\HCMCMC\HCMCMC\HCMCMC.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Debug\HCMCMC.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /I..\opencv\include /Zi /nologo /W3 /WX- /Od /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /errorReport:prompt GibbsSampling.cpp hcmcmc.cpp
-         GibbsSampling.cpp
-     1>GibbsSampling.cpp(38): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
-     1>GibbsSampling.cpp(64): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GibbsSampling.cpp(66): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
-     1>GibbsSampling.cpp(122): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(117): warning C4101: 'v2' : unreferenced local variable
-     1>GibbsSampling.cpp(190): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
-     1>GibbsSampling.cpp(220): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(225): warning C4244: '+=' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(230): warning C4244: '-=' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(238): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(272): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(278): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>GibbsSampling.cpp(304): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-         Generating Code...
-         Skipping... (no relevant changes detected)
-         hcmcmc.cpp
+         All outputs are up-to-date.
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.exe" /NOLOGO /LIBPATH:..\opencv\lib opencv_core249d.lib opencv_highgui249d.lib opencv_imgproc249d.lib opencv_legacy249d.lib opencv_ml249d.lib opencv_photo249d.lib opencv_video249d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\HCMCMC.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.lib" /MACHINE:X64 x64\Debug\GibbsSampling.obj
-         x64\Debug\hcmcmc.obj
-         LINK : D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.exe not found or not built by the last incremental link; performing full link
-         HCMCMC.vcxproj -> D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.exe
-       Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"D:\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.exe;#1" /manifest x64\Debug\HCMCMC.exe.intermediate.manifest
+         All outputs are up-to-date.
+         HCMCMC.vcxproj -> C:\Users\gen\Documents\GitHub\HCMCMC\HCMCMC\x64\Debug\HCMCMC.exe
        FinalizeBuildStatus:
          Deleting file "x64\Debug\HCMCMC.unsuccessfulbuild".
          Touching "x64\Debug\HCMCMC.lastbuildstate".
-     1>Done Building Project "D:\GitHub\HCMCMC\HCMCMC\HCMCMC\HCMCMC.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\gen\Documents\GitHub\HCMCMC\HCMCMC\HCMCMC\HCMCMC.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.99
+Time Elapsed 00:00:00.21

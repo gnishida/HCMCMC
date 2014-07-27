@@ -1,0 +1,38 @@
+﻿- Characteristicsは1個。(truth0.bmp)
+- サンプル数N = 10
+- ユーザ数M = 10
+
+とりあえず、実装にバグがないかを確認するための実験。画像をみる限り、まぁまぁの結果。
+しかし、K-Sテストの結果はいまいちな感じ。サンプル数が少ないと、こんなものか。
+
+C:\Users\gen\Documents\GitHub\HCMCMC\HCMCMC\HCMCMC>hcmcmc 1 10 10
+K-S test: 1690.28
+Elapsed: 38.065000 [sec]
+
+K-S test: 1789.35
+Elapsed: 76.445000 [sec]
+
+K-S test: 1455.04
+Elapsed: 113.909000 [sec]
+
+K-S test: 1437.35
+Elapsed: 152.114000 [sec]
+
+K-S test: 1606.78
+Elapsed: 200.078000 [sec]
+
+K-S test: 1760.3
+Elapsed: 229.517000 [sec]
+
+K-S test: 1322.89
+Elapsed: 265.925000 [sec]
+
+K-S test: 1775.03
+Elapsed: 303.445000 [sec]
+
+K-S test: 1500.23
+Elapsed: 341.594000 [sec]
+
+K-S test: 1312.54
+Elapsed: 381.279000 [sec]
+
