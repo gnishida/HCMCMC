@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GradientDescent.cpp" />
+    <ClCompile Include="HC.cpp" />
     <ClCompile Include="HCMCMC.cpp" />
     <ClCompile Include="KSTest.cpp" />
     <ClCompile Include="main.cpp" />
@@ -121,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GradientDescent.h" />
+    <ClInclude Include="HC.h" />
     <ClInclude Include="HCMCMC.h" />
     <ClInclude Include="KSTest.h" />
     <ClInclude Include="Util.h" />

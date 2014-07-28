@@ -30,6 +30,9 @@
     <ClCompile Include="KSTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HCMCMC.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="KSTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,6 +4,7 @@
 #include "GradientDescent.h"
 #include "Util.h"
 #include "KSTest.h"
+#include "HC.h"
 
 HCMCMC::HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws) : N(N), M(M), S(S), D(D), T(T), ws(ws) {
 }
@@ -123,18 +124,7 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 	sizes[0] = N;
 	sizes[1] = N;
 	sizes[2] = M;
-	cv::Mat q = cv::Mat(3, sizes, CV_32F);
-	q *= 0.0f;
-	for (int i = 0; i < N; ++i) {
-		for (int j = i + 1; j < N; ++j) {
-			for (int k = 0; k < M; ++k) {
-				if (wh.row(k).dot(xt.row(i) - xt.row(j)) > 0) {
-					q.at<float>(cv::Vec3i(i, j, k)) = 1.0f;
-				}
-				q.at<float>(cv::Vec3i(j, i, k)) = 1.0f - q.at<float>(cv::Vec3i(i, j, k));
-			}
-		}
-	}
+	cv::Mat q = HC::run(xt, zp, wh);
 
 	/*
 	// ユーザ投票結果を捏造する
@@ -235,12 +225,19 @@ float HCMCMC::KStest(cv::Mat& result) {
 	float Fn_total = 0.0f;
 	for (int r = 0; r < result.rows; ++r) {
 		for (int c = 0; c < result.cols; ++c) {
-			Fn_total += result.at<float>(r, c) / (float)(T * D);
+			Fn_total += result.at<float>(r, c);
 			Fn[r * result.cols + c] = Fn_total;
 		}
 	}
 
-	float test1 = KSTest::test(Fn, F, T * D);
+	// normalize Fn()
+	for (int r = 0; r < result.rows; ++r) {
+		for (int c = 0; c < result.cols; ++c) {
+			Fn[r * result.cols + c] /= Fn_total;
+		}
+	}
+
+	float test1 = KSTest::test(Fn, F, Fn_total);
 
 	//////////////////////////////////////////////////////////////////
 	// Y -> X order
@@ -262,12 +259,20 @@ float HCMCMC::KStest(cv::Mat& result) {
 	Fn_total = 0.0f;
 	for (int r = 0; r < result.rows; ++r) {
 		for (int c = 0; c < result.cols; ++c) {
-			Fn_total += result.at<float>(r, c) / (float)(T * D);
+			Fn_total += result.at<float>(r, c);
 			Fn[r * result.cols + c] = Fn_total;
 		}
 	}
 
-	float test2 = KSTest::test(Fn, F, T * D);
+	// normalize Fn()
+	for (int r = 0; r < result.rows; ++r) {
+		for (int c = 0; c < result.cols; ++c) {
+			Fn[r * result.cols + c] /= Fn_total;
+		}
+	}
+	std::cout << "Fn_total: " << Fn_total << std::endl;
+
+	float test2 = KSTest::test(Fn, F, Fn_total);
 
 	// take the largest
 	return std::max(test1, test2);
