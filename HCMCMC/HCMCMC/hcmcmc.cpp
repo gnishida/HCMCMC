@@ -108,26 +108,13 @@ void HCMCMC::run() {
  * Gradient descent
  */
 cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
-	// given the N samples, compute the true scores
-	cv::Mat xt = cv::Mat::zeros(N, S, CV_32F);
-	for (int i = 0; i < N; ++i) {
-		for (int s = 0; s < S; ++s) {
-			//xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 0), (int)zp.at<float>(i, 1));
-			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
-		}
-	}
-	Util::normalize(xt);
-	//std::cout << xt << std::endl;
+	cv::Mat xt;
 
 	// synthesize q
-	int sizes[3];
-	sizes[0] = N;
-	sizes[1] = N;
-	sizes[2] = M;
-	cv::Mat q = HC::run(xt, zp, wh);
+	cv::Mat q = HC::run(img, zp, wh, xt);
 
 	/*
-	// ユーザ投票結果を捏造する
+	// ユーザ投票結果を表示する
 	for (int i = 0; i < N; ++i) {
 		for (int j = 0; j < N; ++j) {
 			std::cout << q.at<float>(i, j, 0) << ",";
@@ -138,12 +125,12 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 
 
 	// initialize x, w
-	cv::Mat x = cv::Mat::zeros(xt.rows, xt.cols, CV_32F);
+	cv::Mat x = cv::Mat::zeros(N, S, CV_32F);
 	cv::Mat w(wh.rows, wh.cols, CV_32F);
 	wh.copyTo(w);
 
 	GradientDescent gd;
-	gd.run(x, w, wh, q, 100, xt);
+	gd.run(x, w, wh, q, 100);
 
 	//std::cout << x << std::endl;
 

@@ -12,7 +12,7 @@ GradientDescent::GradientDescent() {
 /**
  * Gradient descent
  */
-float GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter, cv::Mat& xt) {
+float GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter) {
 	//std::cout << "------------------------" << std::endl;
 	//std::cout << "Optimum E: " << E(xt, w, wh, q) << std::endl;
 

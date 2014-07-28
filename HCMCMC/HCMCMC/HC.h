@@ -8,6 +8,6 @@ protected:
 	HC() {}
 
 public:
-	static cv::Mat run(cv::Mat& xt, cv::Mat& zp, cv::Mat& wh);
+	static cv::Mat run(std::vector<cv::Mat>& img, cv::Mat& zp, cv::Mat& wh, cv::Mat& xt);
 };
 
