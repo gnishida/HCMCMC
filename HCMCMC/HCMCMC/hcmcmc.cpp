@@ -8,11 +8,6 @@ HCMCMC::HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws) : N(N), M(M), S(S
 }
 
 void HCMCMC::run() {
-	// setup random variables
-	std::random_device rd;
-	std::mt19937 mt(rd());
-	std::uniform_real_distribution<float> randu(0.0, 1.0);
-
 	// setup images (which will be used as probability distribution)
 	img.clear();
 	for (int s = 0; s < S; ++s) {
@@ -32,7 +27,11 @@ void HCMCMC::run() {
 
 	// synthesize wh
 	cv::Mat wh(M, S, CV_32F);
-	cv::randu(wh, cv::Scalar(0.0f), cv::Scalar(1.0f));
+	for (int k = 0; k < M; ++k) {
+		for (int s = 0; s < S; ++s) {
+			wh.at<float>(k, s) = Util::randu(0.0f, 1.0f);
+		}
+	}
 
 	// normalize wh
 	/*
@@ -46,9 +45,19 @@ void HCMCMC::run() {
 	*/
 
 	// make the first user's weight as uniform
-	for (int s = 0; s < S; ++s) {
+	/*for (int s = 0; s < S; ++s) {
 		wh.at<float>(0, s) = 1.0f / S;
-	}
+	}*/
+
+	/*
+	wh.at<float>(0, 0) = 1.0f;
+	wh.at<float>(0, 1) = 0.0f;
+	wh.at<float>(1, 0) = 0.0f;
+	wh.at<float>(1, 1) = 1.0f;
+	*/
+
+	//std::cout << wh << std::endl;
+
 
 	// MCMC
 	for (int t = 0; t < T; ++t) {
@@ -97,11 +106,6 @@ void HCMCMC::run() {
  * Gradient descent
  */
 cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
-	// setup random variables
-	std::random_device rd;
-	std::mt19937 mt(rd());
-	std::uniform_real_distribution<float> randu(0.0, 1.0);
-
 	// given the N samples, compute the true scores
 	cv::Mat xt = cv::Mat::zeros(N, S, CV_32F);
 	for (int i = 0; i < N; ++i) {
@@ -147,7 +151,7 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 	wh.copyTo(w);
 
 	GradientDescent gd;
-	gd.run(x, w, wh, q, 100);
+	gd.run(x, w, wh, q, 100, xt);
 
 	//std::cout << x << std::endl;
 
@@ -161,11 +165,6 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
  * Choose the next state
  */
 int HCMCMC::choose_next(cv::Mat& p) {
-	// setup random variables
-	std::random_device rd;
-	std::mt19937 mt(rd());
-	std::uniform_real_distribution<float> randu(0.0, 1.0);
-
 	// adjust the score scale to start from 0
 	double minVal, maxVal;
 	cv::minMaxLoc(p, &minVal, &maxVal);
@@ -180,9 +179,11 @@ int HCMCMC::choose_next(cv::Mat& p) {
 		}
 	}
 
-	float r = randu(mt) * cdf.back();
+	float r = Util::randu(0.0f, cdf.back());
 	for (int i = 0; i < cdf.size(); ++i) {
-		if (r < cdf[i]) return i;
+		if (r < cdf[i]) {
+			return i;
+		}
 	}
 
 	return cdf.size() - 1;
@@ -257,6 +258,7 @@ void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
 	for (int i = 0; i < N; ++i) {
 		for (int j = i + 1; j < N; ++j) {
 			for (int s = 0; s < S; ++s) {
+				//if (s > 0) break;
 				if (xt.at<float>(i, s) > xt.at<float>(j, s)) {
 					if (x.at<float>(i, s) > x.at<float>(j, s)) {
 						correct++;

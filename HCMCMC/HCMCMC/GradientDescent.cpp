@@ -1,4 +1,4 @@
-#include "GradientDescent.h"
+﻿#include "GradientDescent.h"
 #include "Util.h"
 
 GradientDescent::GradientDescent() {
@@ -12,23 +12,34 @@ GradientDescent::GradientDescent() {
 /**
  * Gradient descent
  */
-float GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter) {
+float GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter, cv::Mat& xt) {
+	//std::cout << "------------------------" << std::endl;
+	//std::cout << "Optimum E: " << E(xt, w, wh, q) << std::endl;
+
 	int cnt = 0;
 	for (int i = 0; i < niter; ++i, ++cnt) {
 		float old_E = E(x, w, wh, q);
 		x -= e * dEx(x, w, q);
-		Util::normalize(x);
+		//x -= e * dEx2(x, w, q);
+
+		//std::cout << "  " << cnt << ": " << E(x, w, wh, q) << std::endl;
+		//Util::normalize(x);
+		//std::cout << "  " << cnt << ": " << E(x, w, wh, q) << std::endl;
 
 		//w -= e * dEw(x, w, wh, q);
 
 		if (old_E > E(x, w, wh, q) && old_E - E(x, w, wh, q) < EPS) break;
 	}
 
+	//std::cout << "------------------------" << std::endl;
+	//std::cout << "  " << cnt << ": " << E(x, w, wh, q) << std::endl;
+
 	return E(x, w, wh, q);
+	// return E2(x, w, wh, q);
 }
 
 /**
- * Objective function E() defined in eq(4).
+ * 式(4)のobjective functionを、Maximum a priori (MAP)で最適化し、最適解を探す。
  */
 float GradientDescent::E(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q) {
 	float ret = cv::sum((w - wh).mul(w - wh))[0] * 0.5f / a / a;
@@ -47,6 +58,27 @@ float GradientDescent::E(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q) {
 	return ret;
 }
 
+/**
+ * 式(4)のobjective functionを、Maximum Likelihoodで最適化し、最適解を探す。
+ */
+float GradientDescent::E2(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q) {
+	float ret = 0.0f;
+	for (int i = 0; i < x.rows; ++i) {
+		for (int j = i+1; j < x.rows; ++j) {
+			for (int k = 0; k < w.rows; ++k) {
+				float dot = rel * w.row(k).dot(x.row(j) - x.row(i));
+				ret -= (1.0f - q.at<float>(i, j, k)) * dot;
+				ret += logf(1.0f + expf(dot));
+			}
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * Eをxで偏微分
+ */
 cv::Mat GradientDescent::dEx(cv::Mat& x, cv::Mat& w, cv::Mat& q) {
 	cv::Mat ret = cv::Mat::zeros(x.rows, x.cols, CV_32F);
 	for (int i = 0; i < ret.rows; ++i) {
@@ -57,9 +89,57 @@ cv::Mat GradientDescent::dEx(cv::Mat& x, cv::Mat& w, cv::Mat& q) {
 	return ret;
 }
 
+/**
+ * Eをxで偏微分
+ * ただし、MAPではなく、Maximum Likelihoodアルゴリズムを使用。
+ */
+cv::Mat GradientDescent::dEx2(cv::Mat& x, cv::Mat& w, cv::Mat& q) {
+	cv::Mat ret = cv::Mat::zeros(x.rows, x.cols, CV_32F);
+	for (int i = 0; i < ret.rows; ++i) {
+		cv::Mat row_i = ret.colRange(0, ret.cols).rowRange(i, i+1);
+		dExi(i, x, w, q, row_i);
+	}
+
+	return ret;
+}
+
+/**
+ * Eをxで偏微分（各行について偏微分を実施）
+ */
 void GradientDescent::dExi(int i, cv::Mat& x, cv::Mat& w, cv::Mat& q, cv::Mat& ret) {
 	x.row(i).copyTo(ret);
 	ret /= (theta * theta);
+	for (int j = 0; j < x.rows; ++j) {
+		if (j == i) continue;
+		for (int k = 0; k < w.rows; ++k) {
+			ret -= w.row(k) * q.at<float>(i, j, k);
+		}
+	}
+	for (int j = i + 1; j < x.rows; ++j) {
+		for (int k = 0; k < w.rows; ++k) {
+			ret += w.row(k);
+		}
+	}
+	for (int j = i + 1; j < x.rows; ++j) {
+		for (int k = 0; k < w.rows; ++k) {
+			float ex = expf(rel * w.row(k).dot(x.row(j) - x.row(i)));
+			ret -= w.row(k) * ex / (1.0f + ex);
+		}
+	}
+	for (int j = 0; j < i; ++j) {
+		for (int k = 0; k < w.rows; ++k) {
+			float ex = expf(rel * w.row(k).dot(x.row(i) - x.row(j)));
+			ret += w.row(k) * ex / (1.0f + ex);
+		}
+	}
+}
+
+/**
+ * Eをxで偏微分（各行について偏微分を実施）
+ * ただし、MAPではなく、Maximum Likelihoodアルゴリズムを使用。
+ */
+void GradientDescent::dExi2(int i, cv::Mat& x, cv::Mat& w, cv::Mat& q, cv::Mat& ret) {
+	ret = cv::Mat::zeros(1, x.cols, CV_32F);
 	for (int j = 0; j < x.rows; ++j) {
 		if (j == i) continue;
 		for (int k = 0; k < w.rows; ++k) {

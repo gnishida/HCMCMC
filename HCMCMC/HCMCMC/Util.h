@@ -9,5 +9,6 @@ protected:
 
 public:
 	static void normalize(cv::Mat& x);
+	static float randu(float a, float b);
 };
 

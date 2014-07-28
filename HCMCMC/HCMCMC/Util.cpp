@@ -1,4 +1,5 @@
 #include "Util.h"
+#include <stdlib.h>
 
 #ifndef SQR
 #define SQR(x)		((x) * (x))
@@ -22,4 +23,10 @@ void Util::normalize(cv::Mat& x) {
 			x.at<float>(r, c) = (x.at<float>(r, c) - avg.at<float>(0, c)) / stddev;
 		}
 	}
+}
+
+float Util::randu(float a, float b) {
+	float r = (float)(rand() % 1000) / 1000.0f;//RAND_MAX;
+
+	return a + (b - a) * r;
 }

@@ -11,6 +11,8 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
+	srand(0);
+
 	int N = atoi(argv[2]);
 	int M = atoi(argv[3]);
 	int S = atoi(argv[1]);

@@ -13,13 +13,16 @@ private:
 	float rel;		// reliance
 
 public:
-	GradientDescent(void);
-	float run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter);
+	GradientDescent();
+	float run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter, cv::Mat& xt);
 
 private:
 	float E(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q);
+	float E2(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q);
 	cv::Mat dEx(cv::Mat& x, cv::Mat& w, cv::Mat& q);
+	cv::Mat dEx2(cv::Mat& x, cv::Mat& w, cv::Mat& q);
 	void dExi(int i, cv::Mat& x, cv::Mat& w, cv::Mat& q, cv::Mat& ret);
+	void dExi2(int i, cv::Mat& x, cv::Mat& w, cv::Mat& q, cv::Mat& ret);
 	cv::Mat dEw(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q);
 	void dEwk(int k, cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, cv::Mat& ret);
 };
