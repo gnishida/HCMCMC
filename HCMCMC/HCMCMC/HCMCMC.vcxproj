@@ -115,12 +115,14 @@
   <ItemGroup>
     <ClCompile Include="GradientDescent.cpp" />
     <ClCompile Include="HCMCMC.cpp" />
+    <ClCompile Include="KSTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GradientDescent.h" />
     <ClInclude Include="HCMCMC.h" />
+    <ClInclude Include="KSTest.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

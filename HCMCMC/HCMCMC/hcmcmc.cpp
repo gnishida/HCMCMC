@@ -3,6 +3,7 @@
 #include <random>
 #include "GradientDescent.h"
 #include "Util.h"
+#include "KSTest.h"
 
 HCMCMC::HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws) : N(N), M(M), S(S), D(D), T(T), ws(ws) {
 }
@@ -17,7 +18,7 @@ void HCMCMC::run() {
 	}
 
 	// initialize the result
-	cv::Mat result = cv::Mat(img[0].rows, img[0].cols, CV_32F, cv::Scalar(0.0f));
+	cv::Mat result = cv::Mat(img[0].cols, img[0].rows, CV_32F, cv::Scalar(0.0f));
 
 	// initialize the state (center)
 	std::vector<int> z;
@@ -63,7 +64,7 @@ void HCMCMC::run() {
 	for (int t = 0; t < T; ++t) {
 		for (int d = 0; d < D; ++d) {
 			// record the current state
-			result.at<float>(z[0], z[1]) += 1.0f;
+			result.at<float>(z[1], z[0]) += 1.0f;
 			//std::cout << "sampled: " << z[0] << "," << z[1] << std::endl;
 
 			// sample N data
@@ -93,13 +94,13 @@ void HCMCMC::run() {
 		}
 	}
 
+	// Kolmogorov-Smirnov test
+	std::cout << "K-S test: " << KStest(result) << std::endl;
+
 	// save the result
 	char filename[256];
 	sprintf(filename, "result_%d.jpg", T);
 	save(result, filename);
-
-	// Kolmogorov-Smirnov test
-	std::cout << "K-S test: " << KStest(result) << std::endl;
 }
 
 /**
@@ -110,7 +111,8 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 	cv::Mat xt = cv::Mat::zeros(N, S, CV_32F);
 	for (int i = 0; i < N; ++i) {
 		for (int s = 0; s < S; ++s) {
-			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 0), (int)zp.at<float>(i, 1));
+			//xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 0), (int)zp.at<float>(i, 1));
+			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
 		}
 	}
 	Util::normalize(xt);
@@ -189,7 +191,7 @@ int HCMCMC::choose_next(cv::Mat& p) {
 	return cdf.size() - 1;
 }
 
-void HCMCMC::save(cv::Mat& result, char* filename) {
+void HCMCMC::save(cv::Mat result, char* filename) {
 	double minVal, maxVal;
 	cv::minMaxLoc(result, &minVal, &maxVal);
 	result *= 255.0f / maxVal * 1.2f;
@@ -211,6 +213,9 @@ float HCMCMC::KStest(cv::Mat& result) {
 		total_img.push_back(cv::sum(img[s])[0]);
 	}
 
+	//////////////////////////////////////////////////////////////////
+	// X -> Y order
+
 	// create F()
 	std::vector<float> F(result.rows * result.cols);
 	float F_total = 0.0f;
@@ -225,30 +230,47 @@ float HCMCMC::KStest(cv::Mat& result) {
 		}
 	}
 
-	// normalize F()
-	for (int i = 0; i < F.size(); ++i) {
-		F[i] /= F_total;
-	}
-
 	// create Fn()
 	std::vector<float> Fn(result.rows * result.cols);
 	float Fn_total = 0.0f;
 	for (int r = 0; r < result.rows; ++r) {
 		for (int c = 0; c < result.cols; ++c) {
-			Fn_total += result.at<float>(r, c) / (float)T;
+			Fn_total += result.at<float>(r, c) / (float)(T * D);
 			Fn[r * result.cols + c] = Fn_total;
 		}
 	}
 
-	// compute D
-	float D = 0.0f;
-	for (int i = 0; i < F.size(); ++i) {
-		if (fabs(Fn[i] - F[i]) > D) {
-			D = fabs(Fn[i] - F[i]);
+	float test1 = KSTest::test(Fn, F, T * D);
+
+	//////////////////////////////////////////////////////////////////
+	// Y -> X order
+
+	// create F()
+	F_total = 0.0f;
+	for (int r = 0; r < result.rows; ++r) {
+		for (int c = 0; c < result.cols; ++c) {
+			float expected = 0.0f;
+			for (int s = 0; s < S; ++s) {
+				expected += ws.at<float>(s, 0) * img[s].at<uchar>(r, c) / total_img[s];
+			}
+			F_total += expected;
+			F[r * result.cols + c] = F_total;
 		}
 	}
 
-	return D * sqrtf((float)T);
+	// create Fn()
+	Fn_total = 0.0f;
+	for (int r = 0; r < result.rows; ++r) {
+		for (int c = 0; c < result.cols; ++c) {
+			Fn_total += result.at<float>(r, c) / (float)(T * D);
+			Fn[r * result.cols + c] = Fn_total;
+		}
+	}
+
+	float test2 = KSTest::test(Fn, F, T * D);
+
+	// take the largest
+	return std::max(test1, test2);
 }
 
 void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {

@@ -20,7 +20,7 @@ public:
 private:
 	cv::Mat grad_desc_test(cv::Mat& wh, cv::Mat& zp);
 	int choose_next(cv::Mat& p);
-	void save(cv::Mat& result, char* filename);
+	void save(cv::Mat result, char* filename);
 	float KStest(cv::Mat& result);
 	void check_estimation(cv::Mat& x, cv::Mat& xt);
 };
