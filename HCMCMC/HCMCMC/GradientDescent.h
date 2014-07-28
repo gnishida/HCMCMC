@@ -14,7 +14,7 @@ private:
 
 public:
 	GradientDescent(void);
-	int run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter);
+	float run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter);
 
 private:
 	float E(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q);

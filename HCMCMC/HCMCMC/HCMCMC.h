@@ -22,6 +22,6 @@ private:
 	int choose_next(cv::Mat& p);
 	void save(cv::Mat& result, char* filename);
 	float KStest(cv::Mat& result);
-	void check_estimation(cv::Mat& est, cv::Mat& wh, cv::Mat& q);
+	void check_estimation(cv::Mat& x, cv::Mat& xt);
 };
 

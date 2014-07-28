@@ -12,7 +12,7 @@ GradientDescent::GradientDescent() {
 /**
  * Gradient descent
  */
-int GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter) {
+float GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int niter) {
 	int cnt = 0;
 	for (int i = 0; i < niter; ++i, ++cnt) {
 		float old_E = E(x, w, wh, q);
@@ -24,7 +24,7 @@ int GradientDescent::run(cv::Mat& x, cv::Mat& w, cv::Mat& wh, cv::Mat& q, int ni
 		if (old_E > E(x, w, wh, q) && old_E - E(x, w, wh, q) < EPS) break;
 	}
 
-	return cnt;
+	return E(x, w, wh, q);
 }
 
 /**

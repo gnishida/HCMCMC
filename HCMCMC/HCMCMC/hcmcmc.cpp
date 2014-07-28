@@ -1,4 +1,4 @@
-#include "HCMCMC.h"
+﻿#include "HCMCMC.h"
 #include <vector>
 #include <random>
 #include "GradientDescent.h"
@@ -62,12 +62,16 @@ void HCMCMC::run() {
 			for (int i = 0; i < N; ++i) {
 				for (int d2 = 0; d2 < D; ++d2) {
 					if (d2 == d) {
-						zp.at<float>(i, d2) = (int)(randu(mt) * img[0].rows);
+						zp.at<float>(i, d2) = i;//(int)(randu(mt) * img[0].rows);
 					} else {
 						zp.at<float>(i, d2) = z[d2];
 					}
 				}
 			}
+
+
+
+			//std::cout << zp << std::endl;
 
 
 
@@ -106,6 +110,7 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 		}
 	}
 	Util::normalize(xt);
+	//std::cout << xt << std::endl;
 
 	// synthesize q
 	int sizes[3];
@@ -125,6 +130,17 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 		}
 	}
 
+	/*
+	// ユーザ投票結果を捏造する
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			std::cout << q.at<float>(i, j, 0) << ",";
+		}
+		std::cout << std::endl;
+	}
+	*/
+
+
 	// initialize x, w
 	cv::Mat x = cv::Mat::zeros(xt.rows, xt.cols, CV_32F);
 	cv::Mat w(wh.rows, wh.cols, CV_32F);
@@ -133,8 +149,10 @@ cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
 	GradientDescent gd;
 	gd.run(x, w, wh, q, 100);
 
+	//std::cout << x << std::endl;
+
 	// compute the accuracy of the estimation
-	check_estimation(x, wh, q);
+	check_estimation(x, xt);
 
 	return x;
 }
@@ -232,21 +250,21 @@ float HCMCMC::KStest(cv::Mat& result) {
 	return D * sqrtf((float)T);
 }
 
-void HCMCMC::check_estimation(cv::Mat& est, cv::Mat& wh, cv::Mat& q) {
+void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
 	int correct = 0;
 	int incorrect = 0;
 
 	for (int i = 0; i < N; ++i) {
 		for (int j = i + 1; j < N; ++j) {
-			for (int k = 0; k < M; ++k) {
-				if (wh.row(k).dot(est.row(i) - est.row(j)) > 0) {
-					if (q.at<float>(i, j, k) == 1.0) {
+			for (int s = 0; s < S; ++s) {
+				if (xt.at<float>(i, s) > xt.at<float>(j, s)) {
+					if (x.at<float>(i, s) > x.at<float>(j, s)) {
 						correct++;
 					} else {
 						incorrect++;
 					}
 				} else {
-					if (q.at<float>(i, j, k) == 1.0) {
+					if (x.at<float>(i, s) > x.at<float>(j, s)) {
 						incorrect++;
 					} else {
 						correct++;
@@ -257,7 +275,7 @@ void HCMCMC::check_estimation(cv::Mat& est, cv::Mat& wh, cv::Mat& q) {
 	}
 	
 	float ratio = (float)correct / (float)(correct + incorrect);
-	if (ratio < 0.8f) {
-		std::cout << "[Warning] Correct ratio: " << ratio*100.0f << " [%]" << std::endl;
+	if (ratio < 0.95f) {
+		//std::cout << "[Warning] Correct ratio: " << ratio*100.0f << " [%]" << std::endl;
 	}
 }
