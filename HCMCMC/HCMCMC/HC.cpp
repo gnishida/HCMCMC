@@ -10,7 +10,7 @@
  *
  * 行列whは、M行S列の行列で、ユーザ毎の重みベクトルを表す。
  */
-cv::Mat HC::run(std::vector<cv::Mat>& img, cv::Mat& zp, cv::Mat& wh, cv::Mat& xt, bool noise) {
+cv::Mat HC::run(cv::Mat& zp, cv::Mat& wh, cv::Mat& xt, bool noise) {
 	float rel = 10.0f;
 
 	int sizes[3];

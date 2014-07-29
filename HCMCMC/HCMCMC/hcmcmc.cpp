@@ -6,35 +6,66 @@
 #include "KSTest.h"
 #include "HC.h"
 #include "TopNSearch.h"
+#include "Permutation.h"
 
 HCMCMC::HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws) : N(N), M(M), S(S), D(D), T(T), ws(ws) {
 }
 
 void HCMCMC::run() {
-	// setup images (which will be used as probability distribution)
-	img.clear();
+	std::vector<int> size(D);
+	for (int i = 0; i < D; ++i) {
+		size[i] = N;
+	}
 	for (int s = 0; s < S; ++s) {
-		char filename[256];
-		sprintf(filename, "truth%d.bmp", s);
-		img.push_back(cv::imread(filename, 0));
+		img2.push_back(cv::Mat(D, size.data(), CV_32F, cv::Scalar(0.0f)));
 	}
 
+	Permutation perm(D, N-1);
+	while (true) {
+		std::vector<int> point(D);
+		for (int i = 0; i < D; ++i) {
+			point[i] = perm.data[i];
+		}
+		for (int s = 0; s < S; ++s) {
+			img2[s].at<float>(point.data()) = Util::randu();
+		}
+
+		if (!perm.next()) break;
+	}
+
+	// normalize
+	for (int s = 0; s < S; ++s) {
+		img2[s] /= cv::sum(img2[s])[0];
+	}
+
+	// debug
+	/*
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			for (int k = 0; k < N; ++k) {
+				std::cout << i << "," << j << "," << k << " [";
+				for (int s = 0; s < S; ++s) {
+					std::cout << img2[s].at<float>(i, j, k) << ",";
+				}
+				std::cout << "]" << std::endl;
+			}
+		}
+	}*/
+
 	// initialize the result
-	cv::Mat result = cv::Mat(img[0].cols, img[0].rows, CV_32F, cv::Scalar(0.0f));
+	cv::Mat result = cv::Mat(D, size.data(), CV_32F, cv::Scalar(0.0f));
 
 	// initialize the state (center)
 	std::vector<int> z;
 	for (int d = 0; d < D; ++d) {
-		z.push_back(img[0].rows * 0.5f);
+		z.push_back(N * 0.5f);
 	}
-	z[0] = 2;
-	z[1] = 2;
 
 	// synthesize wh
 	cv::Mat wh(M, S, CV_32F);
 	for (int k = 0; k < M; ++k) {
 		for (int s = 0; s < S; ++s) {
-			wh.at<float>(k, s) = Util::randu(0.0f, 1.0f);
+			wh.at<float>(k, s) = Util::randu();
 		}
 	}
 
@@ -55,10 +86,6 @@ void HCMCMC::run() {
 	// MCMC
 	for (int t = 0; t < T; ++t) {
 		for (int d = 0; d < D; ++d) {
-			// record the current state
-			result.at<float>(z[1], z[0]) += 1.0f;
-			//std::cout << "sampled: " << z[0] << "," << z[1] << std::endl;
-
 			// sample N data
 			cv::Mat zp(N, D, CV_32F);
 			for (int i = 0; i < N; ++i) {
@@ -78,9 +105,21 @@ void HCMCMC::run() {
 
 			// 真の値を取得
 			cv::Mat xt = getTrueValue(zp);
+
+			/*
+			for (int i = 0; i < N; ++i) {
+				std::cout << "(";
+				for (int d = 0; d < D; ++d) {
+					std::cout << zp.at<float>(i, d) << ",";
+				}
+				std::cout << ")" << std::endl;
+			}
+
+			std::cout << xt << std::endl;
+			*/
 			
 			// synthesize q
-			cv::Mat q = HC::run(img, zp, wh, xt, true);
+			cv::Mat q = HC::run(zp, wh, xt, false);
 
 			// initialize x, w
 			cv::Mat x = cv::Mat::zeros(N, S, CV_32F);
@@ -96,21 +135,37 @@ void HCMCMC::run() {
 			//check_estimation(x, xt);
 
 			// choose the next state according to the conditional distribution
-			cv::Mat score = x * ws;
+			cv::Mat score = xt * ws;
+			//std::cout << score << std::endl;
 			z[d] = zp.at<float>(choose_next(score), d);
+
+			// record the current state
+			result.at<float>(z.data()) += 1.0f;
 		}
 	}
 
 	// Kolmogorov-Smirnov test
 	//std::cout << "K-S test: " << KStest(result) << std::endl;
 
+	// compute the expected
+	cv::Mat truth = cv::Mat(D, size.data(), CV_32F, cv::Scalar(0.0f));
+	for (int s = 0; s < S; ++s) {
+		truth += img2[s] * ws.at<float>(s, 0);
+	}
+
+	//Util::displayMat3f(truth, N);
+
 	// top 10%
-	std::cout << "Top 10%: " << top10(result) * 100.0f << " %" << std::endl;
+	std::cout << "Top 10%: " << top10(result, truth) * 100.0f << " %" << std::endl;
 
 	// save the result
 	char filename[256];
 	sprintf(filename, "result_%d.jpg", T);
-	save(result, filename);
+	save(result, 0, 1, filename);
+	
+	// save the ground truth
+	sprintf(filename, "truth_%d.jpg", T);
+	save(truth, 0, 1, filename);
 }
 
 /**
@@ -118,13 +173,17 @@ void HCMCMC::run() {
  * 真の値を取得して返却する。
  */
 cv::Mat HCMCMC::getTrueValue(cv::Mat& zp) {
-	cv::Mat xt = cv::Mat::zeros(zp.rows, img.size(), CV_32F);
-	for (int i = 0; i < xt.rows; ++i) {
-		for (int s = 0; s < xt.cols; ++s) {
-			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
+	cv::Mat xt = cv::Mat::zeros(N, S, CV_32F);
+	for (int i = 0; i < N; ++i) {
+		for (int s = 0; s < S; ++s) {
+			std::vector<int> point(D);
+			for (int d = 0; d < D; ++d) {
+				point[d] = zp.at<float>(i, d);
+			}
+			xt.at<float>(i, s) = img2[s].at<float>(point.data());//img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
 		}
 	}
-	Util::normalize(xt);
+	//Util::normalize(xt);
 
 	return xt;
 }
@@ -141,7 +200,7 @@ int HCMCMC::choose_next(cv::Mat& p) {
 	p -= minVal;
 
 	// おまじない。これがないと、一番下の確率のやつは、確率0となっちゃう
-	p += 0.22f;
+	//p += 0.22f;
 
 	//std::cout << p << std::endl;
 
@@ -164,15 +223,33 @@ int HCMCMC::choose_next(cv::Mat& p) {
 	return cdf.size() - 1;
 }
 
-void HCMCMC::save(cv::Mat result, char* filename) {
-	double minVal, maxVal;
-	cv::minMaxLoc(result, &minVal, &maxVal);
-	result *= 255.0f / maxVal * 1.2f;
-	//float avg = cv::mean(result)[0];
-	//result *= 127.0f / avg;
+/**
+ * 結果の入った行列resutlのうち、d1次元とd2次元を画像として保存する。
+ */
+void HCMCMC::save(cv::Mat result, int d1, int d2, char* filename) {
+	// 指定されたプレーンでの断面を２次元の行列に格納する
+	// (d1次元、d2次元以外は、真ん中の座標を使用する)
+	cv::Mat plane(N, N, CV_32F);
+	std::vector<int> point(D);
+	for (int d = 0; d < D; ++d) {
+		point[d] = (int)(N * 0.5f);
+	}
+	for (int r = 0; r < N; ++r) {
+		for (int c = 0; c < N; ++c) {
+			point[d1] = c;
+			point[d2] = r;
+			plane.at<float>(r, c) = result.at<float>(point.data());
+		}
+	}
 
+	// ２次元の行列の要素の値が0～255の範囲になるよう調節する
+	double minVal, maxVal;
+	cv::minMaxLoc(plane, &minVal, &maxVal);
+	plane *= 255.0f / maxVal * 1.2f;
+
+	// uchar型の行列に変換する
 	cv::Mat resultImg;
-	result.convertTo(resultImg, CV_8U);
+	plane.convertTo(resultImg, CV_8U);
 
 	cv::imwrite(filename, resultImg);
 }
@@ -180,6 +257,7 @@ void HCMCMC::save(cv::Mat result, char* filename) {
 /**
  * Kolmogorov-Smirnov test
  */
+/*
 float HCMCMC::KStest(cv::Mat& result) {
 	std::cout << result << std::endl;
 
@@ -265,32 +343,33 @@ float HCMCMC::KStest(cv::Mat& result) {
 	// take the largest
 	return std::max(test1, test2);
 }
+*/
 
 /**
  * Top10%のデータポイントのうち、どのぐらいをサンプリングできたか？
  */
-float HCMCMC::top10(cv::Mat& result) {
-	std::cout << result << std::endl;
-	TopNSearch tns;
-	for (int r = 0; r < img[0].rows; ++r) {
-		for (int c = 0; c < img[0].cols; ++c) {
-			float value = 0.0f;
-			for (int s = 0; s < S; ++s) {
-				value += (float)img[s].at<uchar>(r, c) * ws.at<float>(s, 0);
-			}
+float HCMCMC::top10(cv::Mat& result, cv::Mat& truth) {
+	//Util::displayMat3f(result, N);
 
-			tns.add(r * img[0].cols + c, value);
+	TopNSearch<std::vector<int> > tns;
+	Permutation perm(D, N - 1);
+
+
+	while (true) {
+		std::vector<int> point(D);
+		for (int d = 0; d < D; ++d) {
+			point[d] = perm.data[d];
 		}
+		tns.add(perm.data, truth.at<float>(point.data()));
+
+		if (!perm.next()) break;
 	}
 
-	std::vector<int> top = tns.topN(img[0].rows * img[0].cols * 0.1, TopNSearch::ORDER_DESC);
+	std::vector<std::vector<int> > top = tns.topN(ceilf(powf(N, D) * 0.1f));
 
 	int cnt = 0;
 	for (int i = 0; i < top.size(); ++i) {
-		int r = top[i] / img[0].cols;
-		int c = top[i] % img[0].cols;
-
-		if (result.at<float>(r, c) > 0.0f) {
+		if (result.at<float>(top[i].data()) > 0.0f) {
 			cnt++;
 		}
 	}
@@ -298,7 +377,7 @@ float HCMCMC::top10(cv::Mat& result) {
 	return (float)cnt / (float)top.size();
 }
 
-void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
+/*void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
 	int correct = 0;
 	int incorrect = 0;
 
@@ -328,3 +407,4 @@ void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
 		//std::cout << "[Warning] Correct ratio: " << ratio*100.0f << " [%]" << std::endl;
 	}
 }
+*/

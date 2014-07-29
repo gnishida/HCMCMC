@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerEnvironment>PATH=$(PATH);..\opencv</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>2 10 10 20 1.0 0.0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>2 10 10 2 100 1.0 0.0 0.0</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerEnvironment>PATH=$(PATH);..\opencv</LocalDebuggerEnvironment>

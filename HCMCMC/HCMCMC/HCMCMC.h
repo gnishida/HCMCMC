@@ -11,7 +11,9 @@ private:
 	int D;	// dimension of states
 	int T;	// num of MCMC steps
 	cv::Mat ws; // desired weight
-	std::vector<cv::Mat> img;
+	//std::vector<cv::Mat> img;
+	std::vector<cv::Mat> img2;
+
 
 public:
 	HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws);
@@ -20,9 +22,9 @@ public:
 private:
 	cv::Mat getTrueValue(cv::Mat& zp);
 	int choose_next(cv::Mat& p);
-	void save(cv::Mat result, char* filename);
-	float KStest(cv::Mat& result);
-	float top10(cv::Mat& result);
-	void check_estimation(cv::Mat& x, cv::Mat& xt);
+	void save(cv::Mat result, int d1, int d2, char* filename);
+	//float KStest(cv::Mat& result);
+	float top10(cv::Mat& result, cv::Mat& truth);
+	//void check_estimation(cv::Mat& x, cv::Mat& xt);
 };
 

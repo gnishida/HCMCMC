@@ -118,6 +118,7 @@
     <ClCompile Include="HCMCMC.cpp" />
     <ClCompile Include="KSTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Permutation.cpp" />
     <ClCompile Include="TopNSearch.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
@@ -126,6 +127,7 @@
     <ClInclude Include="HC.h" />
     <ClInclude Include="HCMCMC.h" />
     <ClInclude Include="KSTest.h" />
+    <ClInclude Include="Permutation.h" />
     <ClInclude Include="TopNSearch.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
