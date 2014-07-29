@@ -21,6 +21,7 @@ public:
 	bool next() {
 		if (data[0] < m) {
 			data[0]++;
+			return true;
 		} else {
 			data[0] = 0;
 			return carry_over(1);
@@ -33,6 +34,7 @@ private:
 
 		if (data[d] < m) {
 			data[d]++;
+			return true;
 		} else {
 			data[d] = 0;
 			return carry_over(d + 1);
