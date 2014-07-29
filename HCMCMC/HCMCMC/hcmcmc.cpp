@@ -49,18 +49,6 @@ void HCMCMC::run() {
 	}
 	*/
 
-	// make the first user's weight as uniform
-	/*for (int s = 0; s < S; ++s) {
-		wh.at<float>(0, s) = 1.0f / S;
-	}*/
-
-	/*
-	wh.at<float>(0, 0) = 1.0f;
-	wh.at<float>(0, 1) = 0.0f;
-	wh.at<float>(1, 0) = 0.0f;
-	wh.at<float>(1, 1) = 1.0f;
-	*/
-
 	//std::cout << wh << std::endl;
 
 
