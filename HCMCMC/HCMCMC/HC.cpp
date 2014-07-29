@@ -10,15 +10,8 @@
  *
  * 行列whは、M行S列の行列で、ユーザ毎の重みベクトルを表す。
  */
-cv::Mat HC::run(std::vector<cv::Mat>& img, cv::Mat& zp, cv::Mat& wh, cv::Mat& xt) {
-	// 真値を計算する。
-	xt = cv::Mat::zeros(zp.rows, wh.cols, CV_32F);
-	for (int i = 0; i < xt.rows; ++i) {
-		for (int s = 0; s < xt.cols; ++s) {
-			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
-		}
-	}
-	Util::normalize(xt);
+cv::Mat HC::run(std::vector<cv::Mat>& img, cv::Mat& zp, cv::Mat& wh, cv::Mat& xt, bool noise) {
+	float rel = 10.0f;
 
 	int sizes[3];
 	sizes[0] = xt.rows;
@@ -32,8 +25,14 @@ cv::Mat HC::run(std::vector<cv::Mat>& img, cv::Mat& zp, cv::Mat& wh, cv::Mat& xt
 	for (int i = 0; i < zp.rows; ++i) {
 		for (int j = i + 1; j < zp.rows; ++j) {
 			for (int k = 0; k < wh.rows; ++k) {
-				if (wh.row(k).dot(xt.row(i) - xt.row(j)) > 0) {
-					q.at<float>(cv::Vec3i(i, j, k)) = 1.0f;
+				if (noise) {
+					if (1.0f / (1.0f + expf(rel * wh.row(k).dot(xt.row(j) - xt.row(i)))) >= Util::randu(0.0f, 1.0f)) {
+						q.at<float>(cv::Vec3i(i, j, k)) = 1.0f;
+					}
+				} else {
+					if (wh.row(k).dot(xt.row(i) - xt.row(j)) > 0) {
+						q.at<float>(cv::Vec3i(i, j, k)) = 1.0f;
+					}
 				}
 				q.at<float>(cv::Vec3i(j, i, k)) = 1.0f - q.at<float>(cv::Vec3i(i, j, k));
 			}

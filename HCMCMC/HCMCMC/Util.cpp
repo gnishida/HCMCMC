@@ -20,7 +20,10 @@ void Util::normalize(cv::Mat& x) {
 		float stddev = sqrt(total / (float)x.rows);
 		
 		for (int r = 0; r < x.rows; ++r) {
-			x.at<float>(r, c) = (x.at<float>(r, c) - avg.at<float>(0, c)) / stddev;
+			x.at<float>(r, c) -= avg.at<float>(0, c);
+			if (stddev > 0.0f) {
+				x.at<float>(r, c) /= stddev;
+			}
 		}
 	}
 }

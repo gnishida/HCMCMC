@@ -5,6 +5,7 @@
 #include "Util.h"
 #include "KSTest.h"
 #include "HC.h"
+#include "TopNSearch.h"
 
 HCMCMC::HCMCMC(int N, int M, int S, int D, int T, cv::Mat& ws) : N(N), M(M), S(S), D(D), T(T), ws(ws) {
 }
@@ -26,6 +27,8 @@ void HCMCMC::run() {
 	for (int d = 0; d < D; ++d) {
 		z.push_back(img[0].rows * 0.5f);
 	}
+	z[0] = 2;
+	z[1] = 2;
 
 	// synthesize wh
 	cv::Mat wh(M, S, CV_32F);
@@ -85,18 +88,36 @@ void HCMCMC::run() {
 			//std::cout << zp << std::endl;
 
 
+			// 真の値を取得
+			cv::Mat xt = getTrueValue(zp);
+			
+			// synthesize q
+			cv::Mat q = HC::run(img, zp, wh, xt, true);
 
-			// find the optimum by gradient descent
-			cv::Mat est_x = grad_desc_test(wh, zp);
+			// initialize x, w
+			cv::Mat x = cv::Mat::zeros(N, S, CV_32F);
+			cv::Mat w(wh.rows, wh.cols, CV_32F);
+			wh.copyTo(w);
+
+			GradientDescent gd;
+			gd.run(x, w, wh, q, 100);
+
+			//std::cout << x << std::endl;
+
+			// compute the accuracy of the estimation
+			//check_estimation(x, xt);
 
 			// choose the next state according to the conditional distribution
-			cv::Mat est_score = est_x * ws;
-			z[d] = zp.at<float>(choose_next(est_score), d);
+			cv::Mat score = x * ws;
+			z[d] = zp.at<float>(choose_next(score), d);
 		}
 	}
 
 	// Kolmogorov-Smirnov test
-	std::cout << "K-S test: " << KStest(result) << std::endl;
+	//std::cout << "K-S test: " << KStest(result) << std::endl;
+
+	// top 10%
+	std::cout << "Top 10%: " << top10(result) * 100.0f << " %" << std::endl;
 
 	// save the result
 	char filename[256];
@@ -105,49 +126,36 @@ void HCMCMC::run() {
 }
 
 /**
- * Gradient descent
+ * 与えられたサンプルデータポイントについて、
+ * 真の値を取得して返却する。
  */
-cv::Mat HCMCMC::grad_desc_test(cv::Mat& wh, cv::Mat& zp) {
-	cv::Mat xt;
-
-	// synthesize q
-	cv::Mat q = HC::run(img, zp, wh, xt);
-
-	/*
-	// ユーザ投票結果を表示する
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			std::cout << q.at<float>(i, j, 0) << ",";
+cv::Mat HCMCMC::getTrueValue(cv::Mat& zp) {
+	cv::Mat xt = cv::Mat::zeros(zp.rows, img.size(), CV_32F);
+	for (int i = 0; i < xt.rows; ++i) {
+		for (int s = 0; s < xt.cols; ++s) {
+			xt.at<float>(i, s) = img[s].at<uchar>((int)zp.at<float>(i, 1), (int)zp.at<float>(i, 0));
 		}
-		std::cout << std::endl;
 	}
-	*/
+	Util::normalize(xt);
 
-
-	// initialize x, w
-	cv::Mat x = cv::Mat::zeros(N, S, CV_32F);
-	cv::Mat w(wh.rows, wh.cols, CV_32F);
-	wh.copyTo(w);
-
-	GradientDescent gd;
-	gd.run(x, w, wh, q, 100);
-
-	//std::cout << x << std::endl;
-
-	// compute the accuracy of the estimation
-	check_estimation(x, xt);
-
-	return x;
+	return xt;
 }
 
 /**
- * Choose the next state
+ * 条件分布pに従い、次の状態を決定する。
  */
 int HCMCMC::choose_next(cv::Mat& p) {
+	//std::cout << p << std::endl;
+
 	// adjust the score scale to start from 0
 	double minVal, maxVal;
 	cv::minMaxLoc(p, &minVal, &maxVal);
 	p -= minVal;
+
+	// おまじない。これがないと、一番下の確率のやつは、確率0となっちゃう
+	p += 0.22f;
+
+	//std::cout << p << std::endl;
 
 	std::vector<float> cdf;
 	for (int i = 0; i < p.rows; ++i) {
@@ -185,6 +193,8 @@ void HCMCMC::save(cv::Mat result, char* filename) {
  * Kolmogorov-Smirnov test
  */
 float HCMCMC::KStest(cv::Mat& result) {
+	std::cout << result << std::endl;
+
 	std::vector<float> total_img;
 	for (int s = 0; s < S; ++s) {
 		total_img.push_back(cv::sum(img[s])[0]);
@@ -225,44 +235,79 @@ float HCMCMC::KStest(cv::Mat& result) {
 	}
 
 	float test1 = KSTest::test(Fn, F, Fn_total);
+	std::cout << "K-S test (X): " << test1 << std::endl;
 
 	//////////////////////////////////////////////////////////////////
 	// Y -> X order
 
 	// create F()
 	F_total = 0.0f;
-	for (int r = 0; r < result.rows; ++r) {
-		for (int c = 0; c < result.cols; ++c) {
+	for (int c = 0; c < result.cols; ++c) {
+		for (int r = 0; r < result.rows; ++r) {
 			float expected = 0.0f;
 			for (int s = 0; s < S; ++s) {
 				expected += ws.at<float>(s, 0) * img[s].at<uchar>(r, c) / total_img[s];
 			}
 			F_total += expected;
-			F[r * result.cols + c] = F_total;
+			F[c * result.rows + r] = F_total;
 		}
 	}
 
 	// create Fn()
 	Fn_total = 0.0f;
-	for (int r = 0; r < result.rows; ++r) {
-		for (int c = 0; c < result.cols; ++c) {
+	for (int c = 0; c < result.cols; ++c) {
+		for (int r = 0; r < result.rows; ++r) {
 			Fn_total += result.at<float>(r, c);
-			Fn[r * result.cols + c] = Fn_total;
+			Fn[c * result.rows + r] = Fn_total;
 		}
 	}
 
 	// normalize Fn()
-	for (int r = 0; r < result.rows; ++r) {
-		for (int c = 0; c < result.cols; ++c) {
-			Fn[r * result.cols + c] /= Fn_total;
+	for (int c = 0; c < result.cols; ++c) {
+		for (int r = 0; r < result.rows; ++r) {
+			Fn[c * result.rows + r] /= Fn_total;
 		}
 	}
 	std::cout << "Fn_total: " << Fn_total << std::endl;
 
 	float test2 = KSTest::test(Fn, F, Fn_total);
+	std::cout << "K-S test (Y): " << test2 << std::endl;
+
 
 	// take the largest
 	return std::max(test1, test2);
+}
+
+/**
+ * Top10%のデータポイントのうち、どのぐらいをサンプリングできたか？
+ */
+float HCMCMC::top10(cv::Mat& result) {
+	std::cout << result << std::endl;
+	TopNSearch tns;
+	for (int r = 0; r < img[0].rows; ++r) {
+		for (int c = 0; c < img[0].cols; ++c) {
+			float value = 0.0f;
+			for (int s = 0; s < S; ++s) {
+				value += (float)img[s].at<uchar>(r, c) * ws.at<float>(s, 0);
+			}
+
+			tns.add(r * img[0].cols + c, value);
+		}
+	}
+
+	std::vector<int> top = tns.topN(img[0].rows * img[0].cols * 0.1, TopNSearch::ORDER_DESC);
+
+	int cnt = 0;
+	for (int i = 0; i < top.size(); ++i) {
+		int r = top[i] / img[0].cols;
+		int c = top[i] % img[0].cols;
+
+		if (result.at<float>(r, c) > 0.0f) {
+			cnt++;
+		}
+	}
+
+	return (float)cnt / (float)top.size();
 }
 
 void HCMCMC::check_estimation(cv::Mat& x, cv::Mat& xt) {
