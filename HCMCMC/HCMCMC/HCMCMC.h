@@ -11,8 +11,7 @@ private:
 	int D;	// dimension of states
 	int T;	// num of MCMC steps
 	cv::Mat ws; // desired weight
-	//std::vector<cv::Mat> img;
-	std::vector<cv::Mat> img2;
+	std::vector<cv::Mat> img;
 
 
 public:
@@ -20,11 +19,13 @@ public:
 	void run();
 
 private:
-	cv::Mat getTrueValue(cv::Mat& zp);
+	void setupGroundTruth(std::vector<int>& size);
 	int choose_next(cv::Mat& p);
+	int choose_best(cv::Mat& p);
+	cv::Mat getTrueValue(cv::Mat& zp);
 	void save(cv::Mat result, int d1, int d2, char* filename);
 	//float KStest(cv::Mat& result);
-	float top10(cv::Mat& result, cv::Mat& truth);
+	float topN(cv::Mat& result, cv::Mat& truth, float topRatio);
 	//void check_estimation(cv::Mat& x, cv::Mat& xt);
 };
 
